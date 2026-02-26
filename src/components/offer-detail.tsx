@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import {
   LineChart,
   Line,
@@ -13,6 +14,11 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { COUNTRY_NAMES } from "@/lib/constants";
+import {
+  CollectNowButton,
+  DeleteOfferButton,
+  ToggleActiveButton,
+} from "./offer-actions";
 
 interface Snapshot {
   id: string;
@@ -31,12 +37,20 @@ interface OfferData {
   territoryType: string;
   countries: string[];
   timezone: string;
+  isActive: boolean;
   createdAt: Date | string;
   history: Snapshot[];
 }
 
 export function OfferDetail({ offer }: { offer: OfferData }) {
-  const chartData = offer.history
+  const [selectedCountry, setSelectedCountry] = useState<string | null>(null);
+
+  const filteredHistory = useMemo(() => {
+    if (!selectedCountry) return offer.history;
+    return offer.history.filter((s) => s.country === selectedCountry);
+  }, [offer.history, selectedCountry]);
+
+  const chartData = filteredHistory
     .filter((s) => !s.errorMessage)
     .map((s) => ({
       date: format(new Date(s.capturedAtUTC), "dd/MM HH:mm", {
@@ -46,7 +60,6 @@ export function OfferDetail({ offer }: { offer: OfferData }) {
       [`${s.country} Total`]: s.totalCount,
     }));
 
-  // Merge data points with the same date
   const merged = new Map<string, Record<string, string | number>>();
   for (const point of chartData) {
     const existing = merged.get(point.date) ?? { date: point.date };
@@ -62,51 +75,130 @@ export function OfferDetail({ offer }: { offer: OfferData }) {
   }
 
   const colors = [
-    "#2563eb",
-    "#dc2626",
-    "#16a34a",
-    "#ca8a04",
-    "#9333ea",
-    "#0891b2",
+    "#3b82f6",
+    "#ef4444",
+    "#10b981",
+    "#f59e0b",
+    "#8b5cf6",
+    "#06b6d4",
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h2 className="text-lg font-semibold mb-2">{offer.name}</h2>
-        <dl className="grid grid-cols-2 gap-2 text-sm">
-          <dt className="text-gray-500">Termo de busca</dt>
-          <dd className="font-mono">{offer.searchTerm}</dd>
-          <dt className="text-gray-500">Território</dt>
-          <dd>{offer.territoryType}</dd>
-          <dt className="text-gray-500">Países</dt>
-          <dd>
-            {offer.countries
-              .map((c) => COUNTRY_NAMES[c] ?? c)
-              .join(", ")}
-          </dd>
-          <dt className="text-gray-500">Timezone</dt>
-          <dd>{offer.timezone}</dd>
-          <dt className="text-gray-500">Criado em</dt>
-          <dd>
-            {format(new Date(offer.createdAt), "dd/MM/yyyy HH:mm", {
-              locale: ptBR,
-            })}
-          </dd>
+    <div className="space-y-5">
+      {/* Header card */}
+      <div className="card p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-5">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">{offer.name}</h2>
+            <span
+              className={`inline-block mt-1.5 badge ${offer.isActive ? "badge-success" : "badge-neutral"
+                }`}
+            >
+              {offer.isActive ? "● Ativa" : "○ Pausada"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <CollectNowButton offerId={offer.id} />
+            <ToggleActiveButton offerId={offer.id} isActive={offer.isActive} />
+            <DeleteOfferButton offerId={offer.id} />
+          </div>
+        </div>
+        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">Termo de busca</dt>
+            <dd className="font-mono text-gray-900">{offer.searchTerm}</dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">Território</dt>
+            <dd><span className="badge badge-neutral">{offer.territoryType}</span></dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">Países</dt>
+            <dd className="flex gap-1 flex-wrap">
+              {offer.countries.map((c) => (
+                <span key={c} className="badge badge-neutral">{COUNTRY_NAMES[c] ?? c}</span>
+              ))}
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">Timezone</dt>
+            <dd className="text-gray-600">{offer.timezone}</dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">URL original</dt>
+            <dd>
+              <a
+                href={offer.originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline"
+              >
+                Abrir na Ad Library ↗
+              </a>
+            </dd>
+          </div>
+          <div className="flex flex-col gap-0.5">
+            <dt className="text-xs font-medium text-gray-400 uppercase tracking-wider">Criado em</dt>
+            <dd className="text-gray-600">
+              {format(new Date(offer.createdAt), "dd/MM/yyyy HH:mm", {
+                locale: ptBR,
+              })}
+            </dd>
+          </div>
         </dl>
       </div>
 
+      {/* Country filter */}
+      {offer.countries.length > 1 && (
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-400 uppercase tracking-wider">País:</span>
+          <div className="flex gap-1 bg-gray-100/80 rounded-lg p-1">
+            <button
+              onClick={() => setSelectedCountry(null)}
+              className={`chip ${selectedCountry === null ? "chip-active" : "chip-inactive"
+                }`}
+            >
+              Todos
+            </button>
+            {offer.countries.map((c) => (
+              <button
+                key={c}
+                onClick={() => setSelectedCountry(c)}
+                className={`chip ${selectedCountry === c ? "chip-active" : "chip-inactive"
+                  }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Chart */}
       {data.length > 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <h3 className="text-lg font-semibold mb-4">
-            Histórico - Últimos 7 dias
+        <div className="card p-5">
+          <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+            <span className="text-gray-900">Histórico</span>
+            {selectedCountry && (
+              <span className="badge badge-neutral">
+                {COUNTRY_NAMES[selectedCountry] ?? selectedCountry}
+              </span>
+            )}
           </h3>
           <ResponsiveContainer width="100%" height={350}>
             <LineChart data={data}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="date" fontSize={11} />
-              <YAxis fontSize={12} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="date" fontSize={11} tick={{ fill: "#94a3b8" }} />
+              <YAxis fontSize={12} tick={{ fill: "#94a3b8" }} />
+              <Tooltip
+                contentStyle={{
+                  background: "white",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "10px",
+                  boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  fontSize: "13px",
+                }}
+              />
               <Legend />
               {Array.from(seriesKeys).map((key, i) => (
                 <Line
@@ -115,7 +207,8 @@ export function OfferDetail({ offer }: { offer: OfferData }) {
                   dataKey={key}
                   stroke={colors[i % colors.length]}
                   strokeWidth={2}
-                  dot={{ r: 2 }}
+                  dot={{ r: 2.5, fill: colors[i % colors.length] }}
+                  activeDot={{ r: 5, strokeWidth: 2 }}
                   connectNulls
                 />
               ))}
@@ -123,68 +216,76 @@ export function OfferDetail({ offer }: { offer: OfferData }) {
           </ResponsiveContainer>
         </div>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-          <p className="text-gray-400">
+        <div className="card p-10 text-center">
+          <div className="text-4xl mb-3">📸</div>
+          <p className="text-gray-500 font-medium">
             Nenhum snapshot disponível ainda.
+          </p>
+          <p className="text-gray-400 text-sm mt-1">
+            Clique em &quot;⚡ Coletar&quot; acima para coletar o primeiro snapshot.
           </p>
         </div>
       )}
 
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h3 className="text-lg font-semibold mb-4">Histórico de Snapshots</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left">
-                <th className="py-2 px-3 font-medium text-gray-500">Data</th>
-                <th className="py-2 px-3 font-medium text-gray-500">País</th>
-                <th className="py-2 px-3 font-medium text-gray-500 text-right">
-                  Ativos
-                </th>
-                <th className="py-2 px-3 font-medium text-gray-500 text-right">
-                  Total
-                </th>
-                <th className="py-2 px-3 font-medium text-gray-500">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {offer.history.map((snap) => (
-                <tr
-                  key={snap.id}
-                  className="border-b border-gray-100"
-                >
-                  <td className="py-2 px-3 text-xs">
-                    {format(
-                      new Date(snap.capturedAtUTC),
-                      "dd/MM/yyyy HH:mm",
-                      { locale: ptBR }
-                    )}
-                  </td>
-                  <td className="py-2 px-3">
-                    <span className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">
-                      {snap.country}
-                    </span>
-                  </td>
-                  <td className="py-2 px-3 text-right font-mono">
-                    {snap.activeCount.toLocaleString("pt-BR")}
-                  </td>
-                  <td className="py-2 px-3 text-right font-mono">
-                    {snap.totalCount.toLocaleString("pt-BR")}
-                  </td>
-                  <td className="py-2 px-3">
-                    {snap.errorMessage ? (
-                      <span className="text-xs text-red-600">
-                        Erro: {snap.errorMessage}
-                      </span>
-                    ) : (
-                      <span className="text-xs text-green-600">OK</span>
-                    )}
-                  </td>
+      {/* Snapshot table */}
+      <div className="card p-5">
+        <h3 className="text-base font-semibold mb-4 flex items-center gap-2">
+          <span className="text-gray-900">Snapshots</span>
+          <span className="badge badge-neutral">{filteredHistory.length}</span>
+        </h3>
+        {filteredHistory.length === 0 ? (
+          <p className="text-gray-400 text-sm text-center py-6">
+            Nenhum snapshot registrado.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-200/60">
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">Data</th>
+                  <th className="py-2.5 px-3 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">País</th>
+                  <th className="py-2.5 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Ativos</th>
+                  <th className="py-2.5 px-3 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">Total</th>
+                  <th className="py-2.5 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredHistory.map((snap) => (
+                  <tr
+                    key={snap.id}
+                    className="table-row border-b border-gray-100/60"
+                  >
+                    <td className="py-2.5 px-3 text-xs text-gray-600">
+                      {format(
+                        new Date(snap.capturedAtUTC),
+                        "dd/MM/yyyy HH:mm",
+                        { locale: ptBR }
+                      )}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className="badge badge-neutral font-mono">
+                        {snap.country}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-medium text-gray-900">
+                      {snap.activeCount.toLocaleString("pt-BR")}
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono text-gray-500">
+                      {snap.totalCount.toLocaleString("pt-BR")}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      {snap.errorMessage ? (
+                        <span className="badge badge-danger">Erro</span>
+                      ) : (
+                        <span className="badge badge-success">OK</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -104,9 +104,9 @@ export function AddOfferForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           URL da Ad Library
         </label>
         <input
@@ -114,25 +114,25 @@ export function AddOfferForm() {
           value={url}
           onChange={(e) => handleUrlChange(e.target.value)}
           placeholder="https://www.facebook.com/ads/library/?..."
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
           required
         />
         {parsed && (
-          <div className="mt-2 p-2 bg-blue-50 rounded text-xs space-y-1">
+          <div className="mt-2 p-3 bg-blue-50/60 border border-blue-100 rounded-lg text-xs space-y-1 animate-fade-in">
             <p>
-              <span className="font-medium">Termo de busca:</span>{" "}
-              {parsed.searchTerm}
+              <span className="font-semibold text-blue-700">Termo:</span>{" "}
+              <span className="text-blue-600">{parsed.searchTerm}</span>
             </p>
             <p>
-              <span className="font-medium">País detectado:</span>{" "}
-              {parsed.country}
+              <span className="font-semibold text-blue-700">País:</span>{" "}
+              <span className="text-blue-600">{parsed.country}</span>
             </p>
           </div>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Nome da Oferta
         </label>
         <input
@@ -140,26 +140,23 @@ export function AddOfferForm() {
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Ex: Viva Melhor com Saúde"
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
           required
         />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Território
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-1 bg-gray-100/80 rounded-lg p-1 w-fit">
           {(["BR", "USA", "LATAM"] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => handleTerritoryChange(t)}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${
-                territoryType === t
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`chip ${territoryType === t ? "chip-active" : "chip-inactive"
+                }`}
             >
               {t}
             </button>
@@ -168,21 +165,20 @@ export function AddOfferForm() {
       </div>
 
       {territoryType === "LATAM" && (
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+        <div className="animate-fade-in">
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">
             Países
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-1.5">
             {(TERRITORY_COUNTRIES["LATAM"] ?? []).map((country) => (
               <button
                 key={country}
                 type="button"
                 onClick={() => toggleCountry(country)}
-                className={`px-2 py-1 rounded text-xs ${
-                  selectedCountries.includes(country)
-                    ? "bg-blue-600 text-white"
-                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                }`}
+                className={`chip ${selectedCountries.includes(country)
+                    ? "chip-active"
+                    : "chip-inactive"
+                  }`}
               >
                 {country} - {COUNTRY_NAMES[country] ?? country}
               </button>
@@ -192,13 +188,13 @@ export function AddOfferForm() {
       )}
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">
           Timezone
         </label>
         <select
           value={timezone}
           onChange={(e) => setTimezone(e.target.value)}
-          className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full border border-gray-200 rounded-lg px-3 py-2.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all"
         >
           <option value="America/Sao_Paulo">
             America/Sao_Paulo (BRT, UTC-3)
@@ -228,7 +224,7 @@ export function AddOfferForm() {
       </div>
 
       {error && (
-        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div className="p-3 bg-rose-50 border border-rose-200/60 rounded-lg text-rose-700 text-sm animate-fade-in">
           {error}
         </div>
       )}
@@ -236,7 +232,7 @@ export function AddOfferForm() {
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 disabled:opacity-50"
+        className="w-full btn-primary py-2.5"
       >
         {loading ? "Criando..." : "Criar Oferta"}
       </button>

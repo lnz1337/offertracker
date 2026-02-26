@@ -30,6 +30,7 @@ export default async function OfferDetailPage({
       <OfferDetail
         offer={{
           ...offer,
+          isActive: offer.isActive,
           history,
         }}
       />
