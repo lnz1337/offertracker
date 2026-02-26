@@ -24,14 +24,11 @@ interface MetaApiResponse {
 }
 
 async function fetchPage(
-  url: string,
-  accessToken: string
+  url: string
 ): Promise<MetaApiResponse> {
   await rateLimiter.acquire();
 
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
+  const response = await fetch(url);
 
   if (!response.ok) {
     const body = await response.text();
@@ -55,9 +52,11 @@ async function countAds(
 ): Promise<number> {
   const baseUrl = `${META_API_BASE_URL}/${META_API_VERSION}/ads_archive`;
   const params = new URLSearchParams({
+    access_token: accessToken,
     search_terms: searchTerm,
     ad_reached_countries: JSON.stringify([country]),
     ad_active_status: activeStatus,
+    search_type: "KEYWORD_UNORDERED",
     fields: "id",
     limit: String(META_API_ADS_PER_PAGE),
   });
@@ -67,7 +66,7 @@ async function countAds(
   let pageNumber = 0;
 
   while (nextUrl && pageNumber < META_API_MAX_PAGES) {
-    const page = await withRetry(() => fetchPage(nextUrl!, accessToken));
+    const page = await withRetry(() => fetchPage(nextUrl!));
     totalCount += page.data.length;
     nextUrl = page.paging?.next ?? null;
     pageNumber++;
