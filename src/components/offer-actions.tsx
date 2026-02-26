@@ -27,14 +27,16 @@ export function CollectNowButton({ offerId }: { offerId: string }) {
         data.data?.filter(
           (r: { errorMessage: string | null }) => !r.errorMessage
         ).length ?? 0;
-      const errorCount =
+      const errors =
         data.data?.filter(
           (r: { errorMessage: string | null }) => r.errorMessage
-        ).length ?? 0;
+        ) ?? [];
 
-      setResult(
-        `✓ ${successCount} coletado(s)${errorCount > 0 ? `, ${errorCount} erro(s)` : ""}`
-      );
+      if (errors.length > 0) {
+        setResult(`⚠ ${successCount} ok, ${errors.length} erro(s): ${errors[0].errorMessage}`);
+      } else {
+        setResult(`✓ ${successCount} coletado(s)`);
+      }
       router.refresh();
     } catch {
       setResult("Erro de conexão");
@@ -151,8 +153,8 @@ export function ToggleActiveButton({
       onClick={handleToggle}
       disabled={loading}
       className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1.5 rounded-lg transition-all cursor-pointer disabled:opacity-50 ${isActive
-          ? "bg-amber-50 text-amber-700 border border-amber-200/60 hover:bg-amber-100"
-          : "bg-blue-50 text-blue-700 border border-blue-200/60 hover:bg-blue-100"
+        ? "bg-amber-50 text-amber-700 border border-amber-200/60 hover:bg-amber-100"
+        : "bg-blue-50 text-blue-700 border border-blue-200/60 hover:bg-blue-100"
         }`}
     >
       {loading ? "..." : isActive ? "⏸ Pausar" : "▶ Ativar"}
