@@ -1,0 +1,44 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TerritoryType {
+  BR
+  USA
+  LATAM
+}
+
+model Offer {
+  id            String        @id @default(cuid())
+  name          String
+  originalUrl   String
+  searchTerm    String
+  territoryType TerritoryType
+  countries     String[]
+  timezone      String        @default("America/Sao_Paulo")
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  snapshots     Snapshot[]
+
+  @@index([isActive])
+}
+
+model Snapshot {
+  id            String   @id @default(cuid())
+  offerId       String
+  country       String
+  capturedAtUTC DateTime @default(now())
+  activeCount   Int
+  totalCount    Int
+  errorMessage  String?
+  offer         Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+
+  @@index([offerId, capturedAtUTC])
+  @@index([offerId, country, capturedAtUTC])
+}
